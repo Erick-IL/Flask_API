@@ -22,3 +22,8 @@ A aplicação utiliza como base: `http://127.0.0.1:5000`
 git clone https://github.com/Erick-IL/Assistente-pessoal
 ```
 
+## Dependencias 
+```
+pip install -r requirements.txt
+```
+
