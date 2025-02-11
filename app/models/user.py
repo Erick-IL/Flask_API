@@ -1,11 +1,13 @@
 from app.commons.config import Base, session_factory
 from sqlalchemy import Column, Integer, String
+from http import HTTPStatus
 from flask import request
+import datetime
 
 class User(Base):
     __tablename__ = 'users'
     id = Column('id', Integer, primary_key=True, autoincrement=True)
-    name = Column('name', String(256), unique=True, nullable=False)
+    name = Column('name', String(256), nullable=False)
     email = Column('email', String(256), unique=True, nullable=False)
     password = Column('password', String(256))
 
@@ -22,12 +24,20 @@ class User(Base):
             "password": self.password
             
         }
+    def to_payload(self):
+       return {
+            "sub": self.id,
+            "name": self.name,
+            "email": self.email,
+            "exp": datetime.datetime.utcnow() + datetime.timedelta(hours=1)
+        }
         
 
-def register_user():
+def register_user(user_data):
     session = session_factory()
-    user_data = request.get_json()
-        
+    if not user_data.get('name') or not user_data.get('password') or not user_data.get('email'):
+        return {'message': 'insufficient data'}, HTTPStatus.BAD_REQUEST
+    
     name = user_data.get('name')
     email = user_data.get('email')
     password = user_data.get('password')
@@ -36,13 +46,14 @@ def register_user():
         new_user: User = User(name, email, password)
         session.add(new_user)
         session.commit()
-        return new_user.to_json()
+        return new_user.to_json(), HTTPStatus.CREATED
     except Exception as error:
         print(error)
         session.rollback()
-        return error
+        return {'message': error}, HTTPStatus.INTERNAL_SERVER_ERROR
     finally:
         session.close()
+        
 
 
 def get_all_users():
@@ -52,13 +63,14 @@ def get_all_users():
         users: User = session.query(User).all()
         print(users)
         if users:          
-            return {
-                "items": [user.to_json() for user in users]
-            }
-        else: return {"message": 'User not found', "status": '404'}
+            return {"items": [user.to_json() for user in users]}, HTTPStatus.OK
+        else: 
+            return {'message': "User not found"} , HTTPStatus.NOT_FOUND
+        
     except Exception as error:
         print(error)
-        return error
+        session.rollback()
+        return {'message': error}, HTTPStatus.INTERNAL_SERVER_ERROR
     finally:
         session.close()
 
@@ -66,13 +78,55 @@ def search_user(user_id):
     session = session_factory()
 
     try:
-        user:User = session.query(User).get(user_id)
+        user: User = session.query(User).filter(User.id == user_id).first()
         if user:
-            return user.to_json()
-        else: return {"message": 'User not found', "status": '404'}
+            print(user)
+            return user.to_json(), HTTPStatus.OK
+        else: 
+            return {"message": 'User not found'}, HTTPStatus.NOT_FOUND
     except Exception as error:
         print(error)
-        return error
+        session.rollback()
+        return {'message': error}, HTTPStatus.INTERNAL_SERVER_ERROR
     finally:
         session.close()
+
+def update_user(user_id, user_data: dict):
+    session = session_factory()
+
+    try:
+        if not user_data:
+            return {'message': 'insufficient data'}, HTTPStatus.BAD_REQUEST
+
+        alterd_row = session.query(User).filter(User.id == user_id).update({
+            User.email: user_data['email'],
+            User.name: user_data['name'],
+            User.password: user_data['password']
+        })
+        if alterd_row == 0:
+            return {'message': 'User not found'}, HTTPStatus.NOT_FOUND
+
+        session.commit()
+        return user_data, HTTPStatus.OK
+    except Exception as error:
+        print(error)
+        session.rollback()
+        return {'message': error}, HTTPStatus.INTERNAL_SERVER_ERROR
+    finally:
+        session.close()
+
+def delete_user(user_id):
+    session = session_factory()
+    try:
+        user: User = session.query(User).filter(User.id == user_id).first()
+        session.delete(user)
+        session.commit()
+        return {'message': 'user deleted'}, HTTPStatus.NO_CONTENT
+    except Exception as error:
+        print(error)
+        session.rollback()
+        return {'message': error}, HTTPStatus.INTERNAL_SERVER_ERROR
+    finally:
+        session.close()
+    
 

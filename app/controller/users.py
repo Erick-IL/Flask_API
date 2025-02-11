@@ -1,22 +1,35 @@
 from flask import Blueprint, request, jsonify
-from app.models.user import register_user, get_all_users, search_user
+from app.models.user import register_user, get_all_users, search_user, update_user, delete_user
 
 
 blueprint = Blueprint('users', __name__)
 
-@blueprint.route('/users', methods={"GET", "POST"})
+@blueprint.get('/users')
 def users():
-    if request.method == 'GET':
-        data = get_all_users()
-        print(jsonify(data))
-        return jsonify(data)
-    if request.method == 'POST':
-        data = register_user()
-        return jsonify(data)
+    result, success = get_all_users()
+    return jsonify(result), success
+    
+
+@blueprint.post('/users')
+def register():
+    user_data = request.get_json()
+    result, success = register_user(user_data)
+    return jsonify(result), success
 
 
-@blueprint.route('/users/<int:id>', methods={'GET'})
-def get_user_by_id(id):
-    data = search_user(id)
-    return data
+@blueprint.get('/users/<user_id>')
+def get_user_by_id(user_id):
+    result, success = search_user(user_id)
+    return jsonify(result), success
 
+
+@blueprint.patch('/users/<user_id>')
+def update(user_id):
+    user_data = request.get_json()
+    result, success = update_user(user_id, user_data)
+    return jsonify(result), success
+
+@blueprint.delete('/users/<user_id>')
+def delete(user_id):
+    result, success = delete_user(user_id)
+    return jsonify(result), success
