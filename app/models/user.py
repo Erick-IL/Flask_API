@@ -24,13 +24,7 @@ class User(Base):
             "password": self.password
             
         }
-    def to_payload(self):
-       return {
-            "sub": self.id,
-            "name": self.name,
-            "email": self.email,
-            "exp": datetime.datetime.utcnow() + datetime.timedelta(hours=1)
-        }
+
         
 
 def register_user(user_data):
@@ -55,7 +49,6 @@ def register_user(user_data):
         session.close()
         
 
-
 def get_all_users():
     session = session_factory()
 
@@ -74,11 +67,15 @@ def get_all_users():
     finally:
         session.close()
 
-def search_user(user_id):
+def search_user(user_info):
     session = session_factory()
 
     try:
-        user: User = session.query(User).filter(User.id == user_id).first()
+        user: User = session.query(User).filter(User.id == user_info).first()
+        if user:
+            print(user)
+            return user.to_json(), HTTPStatus.OK
+        user: User = session.query(User).filter(User.email == user_info).first()
         if user:
             print(user)
             return user.to_json(), HTTPStatus.OK

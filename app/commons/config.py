@@ -13,9 +13,8 @@ def session_factory():
     DB_HOSTNAME = os.getenv('DB_HOSTNAME')
     DB_PORT = os.getenv('DB_PORT')
     DB_DATABASE = os.getenv('DB_DATABASE')
-    print(f"mysql+pymysql://{DB_USERNAME}:{DB_PASSWORD}@{DB_HOSTNAME}:{DB_PORT}/{DB_DATABASE}")
 
-    engine = create_engine(f"mysql+pymysql://{DB_USERNAME}:@{DB_HOSTNAME}:3306/{DB_DATABASE}")
+    engine = create_engine(f"mysql+pymysql:{DB_PASSWORD}//{DB_USERNAME}:@{DB_HOSTNAME}:{DB_PORT}/{DB_DATABASE}")
     _SessionFactory = sessionmaker(bind=engine)
 
     Base.metadata.create_all(engine, checkfirst=True)
