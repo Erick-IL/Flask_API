@@ -25,8 +25,6 @@ class User(Base):
             
         }
 
-        
-
 def register_user(user_data):
     session = session_factory()
     if not user_data.get('name') or not user_data.get('password') or not user_data.get('email'):

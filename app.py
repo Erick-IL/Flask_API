@@ -1,7 +1,7 @@
 from flask import Flask, request, jsonify
+from app.commons.jwt import decode_token
 from app.controller import users
 from app.controller import auth
-from app.commons.jwt import decode_token
 from dotenv import load_dotenv
 from http import HTTPStatus
 import os
