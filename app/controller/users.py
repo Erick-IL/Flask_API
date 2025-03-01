@@ -1,8 +1,9 @@
 from flask import Blueprint, request, jsonify
+from http import HTTPStatus
 from app.models.user import register_user, get_all_users, search_user, update_user, delete_user
 
 
-blueprint = Blueprint('users', __name__)
+blueprint = Blueprint('users', __name__, url_prefix='/v1')
 
 @blueprint.get('/users')
 def users():
@@ -10,9 +11,9 @@ def users():
     return jsonify(result), success
     
 
-@blueprint.post('/users')
+@blueprint.post('/users/')
 def register():
-    user_data = request.get_json()
+    user_data = request.get_json(silent=True)
     result, success = register_user(user_data)
     return jsonify(result), success
 

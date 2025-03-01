@@ -1,4 +1,5 @@
 from app.commons.config import Base, session_factory
+from app.commons.dtos import validation
 from sqlalchemy import Column, Integer, String
 from http import HTTPStatus
 from flask import request
@@ -28,14 +29,18 @@ class User(Base):
         
 
 def register_user(user_data):
-    session = session_factory()
-    if not user_data.get('name') or not user_data.get('password') or not user_data.get('email'):
+    if not user_data or not user_data.get('name') or not user_data.get('password') or not user_data.get('email'):
         return {'message': 'insufficient data'}, HTTPStatus.BAD_REQUEST
-    
+        
+    error, result = validation(user_data) 
+    if result == HTTPStatus.UNPROCESSABLE_ENTITY:
+        return {'message': error}, HTTPStatus.UNPROCESSABLE_ENTITY
+
     name = user_data.get('name')
     email = user_data.get('email')
     password = user_data.get('password')
 
+    session = session_factory()
     try:
         new_user: User = User(name, email, password)
         session.add(new_user)
@@ -44,7 +49,7 @@ def register_user(user_data):
     except Exception as error:
         print(error)
         session.rollback()
-        return {'message': error}, HTTPStatus.INTERNAL_SERVER_ERROR
+        return {'message': str(error)}, HTTPStatus.INTERNAL_SERVER_ERROR
     finally:
         session.close()
         
@@ -116,6 +121,8 @@ def delete_user(user_id):
     session = session_factory()
     try:
         user: User = session.query(User).filter(User.id == user_id).first()
+        if not user:
+            return {'message': 'user not found or already deleted'}, HTTPStatus.NOT_FOUND
         session.delete(user)
         session.commit()
         return {'message': 'user deleted'}, HTTPStatus.NO_CONTENT

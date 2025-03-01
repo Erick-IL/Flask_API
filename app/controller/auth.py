@@ -1,12 +1,15 @@
 from flask import Blueprint, request, jsonify
+from flask_openapi3 import APIBlueprint, Tag, Info, OpenAPI
 from app.models.user import search_user
 from app.commons.jwt import generate_token
 from http import HTTPStatus
 
-blueprint = Blueprint('auth', __name__)
+blueprint = APIBlueprint("auth", __name__, url_prefix="/v1")
+tag_auth = Tag(name="Auth Jwt", description="Rotas para funcionamento do Jwt authenticator")
 
-
-@blueprint.get('/auth/login')
+@blueprint.get('/auth/login', summary="Create a User",
+    description="Time to create a user account, eh?",
+    tags=[tag_auth],)
 def login():
     auth_data = request.get_json()
     if not auth_data or not auth_data['email'] or not auth_data['password']:
