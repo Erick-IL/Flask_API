@@ -1,9 +1,7 @@
 from app.commons.config import Base, session_factory
-from app.commons.dtos import validation
+from app.commons.dtos import validate_new_user
 from sqlalchemy import Column, Integer, String
 from http import HTTPStatus
-from flask import request
-import datetime
 
 class User(Base):
     __tablename__ = 'users'
@@ -32,8 +30,8 @@ def register_user(user_data):
     if not user_data or not user_data.get('name') or not user_data.get('password') or not user_data.get('email'):
         return {'message': 'insufficient data'}, HTTPStatus.BAD_REQUEST
         
-    error, result = validation(user_data) 
-    if result == HTTPStatus.UNPROCESSABLE_ENTITY:
+    error, status = validate_new_user(user_data) 
+    if status == HTTPStatus.UNPROCESSABLE_ENTITY:
         return {'message': error}, HTTPStatus.UNPROCESSABLE_ENTITY
 
     name = user_data.get('name')
@@ -63,7 +61,7 @@ def get_all_users():
         if users:          
             return {"items": [user.to_json() for user in users]}, HTTPStatus.OK
         else: 
-            return {'message': "User not found"} , HTTPStatus.NOT_FOUND
+            return {'message': "Users not found"} , HTTPStatus.NOT_FOUND
         
     except Exception as error:
         print(error)

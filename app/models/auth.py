@@ -1,16 +1,16 @@
-from flask import Blueprint, request, jsonify
-from flask_openapi3 import APIBlueprint, Tag, Info, OpenAPI
-from app.models.user import search_user
+from app.commons.dtos import validate_login
 from app.commons.jwt import generate_token
+from app.models.user import search_user
+from flask import request
 from http import HTTPStatus
 
-blueprint = APIBlueprint("auth", __name__, url_prefix="/v1")
-tag_auth = Tag(name="Auth Jwt", description="Rotas para funcionamento do Jwt authenticator")
 
-@blueprint.get('/auth/login', summary="Create a User",
-    description="Time to create a user account, eh?",
-    tags=[tag_auth],)
-def login():
+
+def login_user(auth_data):
+    error, status = validate_login()
+    if status == HTTPStatus.UNPROCESSABLE_ENTITY:
+        return {'message': error}, HTTPStatus.UNPROCESSABLE_ENTITY
+    
     auth_data = request.get_json()
     if not auth_data or not auth_data['email'] or not auth_data['password']:
         return {'message': 'email e senha necessario'}, HTTPStatus.BAD_REQUEST
@@ -21,15 +21,3 @@ def login():
     
     token = generate_token(user_info)
     return {"token": token}, HTTPStatus.OK
-
-
-
-
-
-
-    
-    
-    
-
-
-
