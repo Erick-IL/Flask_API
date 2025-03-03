@@ -23,8 +23,7 @@ class User(Base):
             "password": self.password
             
         }
-
-        
+          
 
 def register_user(user_data):
     if not user_data or not user_data.get('name') or not user_data.get('password') or not user_data.get('email'):
@@ -70,6 +69,7 @@ def get_all_users():
     finally:
         session.close()
 
+
 def search_user(user_info):
     session = session_factory()
 
@@ -91,36 +91,45 @@ def search_user(user_info):
     finally:
         session.close()
 
+
 def update_user(user_id, user_data: dict):
     session = session_factory()
+    update_data = {}
+
+    if 'email' in user_data:
+        update_data[User.email] = user_data['email']
+    if 'name' in user_data:
+        update_data[User.name] = user_data['name']
+    if 'password' in user_data:
+        update_data[User.password] = user_data['password']
 
     try:
         if not user_data:
             return {'message': 'insufficient data'}, HTTPStatus.BAD_REQUEST
 
-        alterd_row = session.query(User).filter(User.id == user_id).update({
-            User.email: user_data['email'],
-            User.name: user_data['name'],
-            User.password: user_data['password']
-        })
+        alterd_row = session.query(User).filter(User.id == user_id, ).update(update_data)
         if alterd_row == 0:
-            return {'message': 'User not found'}, HTTPStatus.NOT_FOUND
-
+            alterd_row = session.query(User).filter(User.email == user_id, ).update(update_data)
+            if alterd_row == 0:
+                return {'message': 'User Not Found'}, HTTPStatus.NOT_FOUND
         session.commit()
         return user_data, HTTPStatus.OK
     except Exception as error:
         print(error)
         session.rollback()
-        return {'message': error}, HTTPStatus.INTERNAL_SERVER_ERROR
+        return {'message': str(error)}, HTTPStatus.INTERNAL_SERVER_ERROR
     finally:
         session.close()
 
-def delete_user(user_id):
+
+def delete_user(user_info):
     session = session_factory()
     try:
-        user: User = session.query(User).filter(User.id == user_id).first()
+        user: User = session.query(User).filter(User.id == user_info).first()
         if not user:
-            return {'message': 'user not found or already deleted'}, HTTPStatus.NOT_FOUND
+            user: User = session.query(User).filter(User.email == user_info).first()
+            if not user:
+                return {'message': 'user not found or already deleted'}, HTTPStatus.NOT_FOUND
         session.delete(user)
         session.commit()
         return {'message': 'user deleted'}, HTTPStatus.NO_CONTENT

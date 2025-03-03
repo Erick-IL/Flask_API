@@ -7,7 +7,7 @@ from http import HTTPStatus
 
 
 def login_user(auth_data):
-    error, status = validate_login()
+    error, status = validate_login(auth_data)
     if status == HTTPStatus.UNPROCESSABLE_ENTITY:
         return {'message': error}, HTTPStatus.UNPROCESSABLE_ENTITY
     

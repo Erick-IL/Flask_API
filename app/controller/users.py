@@ -9,24 +9,24 @@ def users():
     result, success = get_all_users()
     return jsonify(result), success
     
-@blueprint.post('/users/')
+@blueprint.post('/auth/signup')
 def register():
     user_data = request.get_json(silent=True)
     result, success = register_user(user_data)
     return jsonify(result), success
 
-@blueprint.get('/users/<user_id>')
-def get_user_by_id(user_id):
-    result, success = search_user(user_id)
+@blueprint.get('/get-user/<user_info>')
+def get_user_by_id(user_info):
+    result, success = search_user(user_info)
     return jsonify(result), success
 
-@blueprint.patch('/users/<user_id>')
-def update(user_id):
-    user_data = request.get_json()
-    result, success = update_user(user_id, user_data)
+@blueprint.patch('/users/<user_info>')
+def update(user_info):
+    user_data = request.get_json(silent=True)
+    result, success = update_user(user_info, user_data)
     return jsonify(result), success
 
-@blueprint.delete('/users/<user_id>')
-def delete(user_id):
-    result, success = delete_user(user_id)
+@blueprint.delete('/users/<user_info>')
+def delete(user_info):
+    result, success = delete_user(user_info)
     return jsonify(result), success

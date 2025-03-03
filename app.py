@@ -26,7 +26,7 @@ app.register_api(users_doc.blueprint)
 
 @app.before_request
 def verify_token():
-    public_routes = ['/v1/auth/login', '/v1-docs', '/v1/users/']
+    public_routes = ['/v1/auth/login', '/v1-docs', '/v1/auth/signup']
 
     if any(request.path.startswith(route) for route in public_routes  or request.method == "OPTIONS"):
         return
