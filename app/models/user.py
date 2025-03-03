@@ -1,8 +1,7 @@
 from app.commons.config import Base, session_factory
+from app.commons.dtos import validate_new_user
 from sqlalchemy import Column, Integer, String
 from http import HTTPStatus
-from flask import request
-import datetime
 
 class User(Base):
     __tablename__ = 'users'
@@ -26,14 +25,18 @@ class User(Base):
         }
 
 def register_user(user_data):
-    session = session_factory()
-    if not user_data.get('name') or not user_data.get('password') or not user_data.get('email'):
+    if not user_data or not user_data.get('name') or not user_data.get('password') or not user_data.get('email'):
         return {'message': 'insufficient data'}, HTTPStatus.BAD_REQUEST
-    
+        
+    error, status = validate_new_user(user_data) 
+    if status == HTTPStatus.UNPROCESSABLE_ENTITY:
+        return {'message': error}, HTTPStatus.UNPROCESSABLE_ENTITY
+
     name = user_data.get('name')
     email = user_data.get('email')
     password = user_data.get('password')
 
+    session = session_factory()
     try:
         new_user: User = User(name, email, password)
         session.add(new_user)
@@ -42,7 +45,7 @@ def register_user(user_data):
     except Exception as error:
         print(error)
         session.rollback()
-        return {'message': error}, HTTPStatus.INTERNAL_SERVER_ERROR
+        return {'message': str(error)}, HTTPStatus.INTERNAL_SERVER_ERROR
     finally:
         session.close()
         
@@ -56,7 +59,7 @@ def get_all_users():
         if users:          
             return {"items": [user.to_json() for user in users]}, HTTPStatus.OK
         else: 
-            return {'message': "User not found"} , HTTPStatus.NOT_FOUND
+            return {'message': "Users not found"} , HTTPStatus.NOT_FOUND
         
     except Exception as error:
         print(error)
@@ -64,6 +67,7 @@ def get_all_users():
         return {'message': error}, HTTPStatus.INTERNAL_SERVER_ERROR
     finally:
         session.close()
+
 
 def search_user(user_info):
     session = session_factory()
@@ -86,34 +90,45 @@ def search_user(user_info):
     finally:
         session.close()
 
+
 def update_user(user_id, user_data: dict):
     session = session_factory()
+    update_data = {}
+
+    if 'email' in user_data:
+        update_data[User.email] = user_data['email']
+    if 'name' in user_data:
+        update_data[User.name] = user_data['name']
+    if 'password' in user_data:
+        update_data[User.password] = user_data['password']
 
     try:
         if not user_data:
             return {'message': 'insufficient data'}, HTTPStatus.BAD_REQUEST
 
-        alterd_row = session.query(User).filter(User.id == user_id).update({
-            User.email: user_data['email'],
-            User.name: user_data['name'],
-            User.password: user_data['password']
-        })
+        alterd_row = session.query(User).filter(User.id == user_id, ).update(update_data)
         if alterd_row == 0:
-            return {'message': 'User not found'}, HTTPStatus.NOT_FOUND
-
+            alterd_row = session.query(User).filter(User.email == user_id, ).update(update_data)
+            if alterd_row == 0:
+                return {'message': 'User Not Found'}, HTTPStatus.NOT_FOUND
         session.commit()
         return user_data, HTTPStatus.OK
     except Exception as error:
         print(error)
         session.rollback()
-        return {'message': error}, HTTPStatus.INTERNAL_SERVER_ERROR
+        return {'message': str(error)}, HTTPStatus.INTERNAL_SERVER_ERROR
     finally:
         session.close()
 
-def delete_user(user_id):
+
+def delete_user(user_info):
     session = session_factory()
     try:
-        user: User = session.query(User).filter(User.id == user_id).first()
+        user: User = session.query(User).filter(User.id == user_info).first()
+        if not user:
+            user: User = session.query(User).filter(User.email == user_info).first()
+            if not user:
+                return {'message': 'user not found or already deleted'}, HTTPStatus.NOT_FOUND
         session.delete(user)
         session.commit()
         return {'message': 'user deleted'}, HTTPStatus.NO_CONTENT

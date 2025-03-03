@@ -1,13 +1,16 @@
-from flask import Blueprint, request, jsonify
-from app.models.user import search_user
+from app.commons.dtos import validate_login
 from app.commons.jwt import generate_token
+from app.models.user import search_user
+from flask import request
 from http import HTTPStatus
 
-blueprint = Blueprint('auth', __name__)
 
 
-@blueprint.get('/auth/login')
-def login():
+def login_user(auth_data):
+    error, status = validate_login(auth_data)
+    if status == HTTPStatus.UNPROCESSABLE_ENTITY:
+        return {'message': error}, HTTPStatus.UNPROCESSABLE_ENTITY
+    
     auth_data = request.get_json()
     if not auth_data or not auth_data['email'] or not auth_data['password']:
         return {'message': 'email e senha necessario'}, HTTPStatus.BAD_REQUEST
@@ -18,15 +21,3 @@ def login():
     
     token = generate_token(user_info)
     return {"token": token}, HTTPStatus.OK
-
-
-
-
-
-
-    
-    
-    
-
-
-

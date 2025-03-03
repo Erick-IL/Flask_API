@@ -27,7 +27,7 @@ def decode_token(token):
         decode_token = jwt.decode(token, SECRET_KEY, algorithms=["HS256"], issuer="Flask_API", audience="Users")
         return decode_token
     except jwt.ExpiredSignatureError:
-        return {"message": "token expirado"}, HTTPStatus.UNAUTHORIZED
+        return {"message": "expired token"}, HTTPStatus.NOT_ACCEPTABLE
     except jwt.InvalidTokenError:
-        return {"message": "token invalido"}, HTTPStatus.UNAUTHORIZED
+        return {"message": "invalid token"}, HTTPStatus.UNAUTHORIZED
 
