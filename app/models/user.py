@@ -23,7 +23,6 @@ class User(Base):
             "password": self.password
             
         }
-          
 
 def register_user(user_data):
     if not user_data or not user_data.get('name') or not user_data.get('password') or not user_data.get('email'):

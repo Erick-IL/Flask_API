@@ -10,6 +10,7 @@ from http import HTTPStatus
 import os
 
 
+
 load_dotenv()
 info = Info(title="API CRUD de usuários", version="v1")
 app = OpenAPI(__name__, info=info, doc_ui="scalar", doc_prefix='/v1-docs')
